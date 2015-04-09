@@ -20,9 +20,9 @@ import java.util.List;
 /**
  * A wrapper for the {@link WildcardTrie} enabling the use of simple character
  * classes .
- * 
+ *
  * @author Pascal Christoph
- * 
+ *
  * @param <P>
  *            type of value stored
  */
@@ -32,32 +32,33 @@ public class SimpleRegexTrie<P> {
 	public static final String SIMPLE_CHARACTER_CLASS = "\\[.*\\]";
 
 	public SimpleRegexTrie() {
-		trie = new WildcardTrie<P>();
+		this.trie = new WildcardTrie<P>();
+	}
+
+	public List<P> get(final String key) {
+		return this.trie.get(key);
 	}
 
 	/**
 	 * Enables the use of simple character classes like 'a[agt][ac]'. Calls the
 	 * method of {@link WildcardTrie} for further treatment.
-	 * 
+	 *
 	 * @param keys
 	 * @param value
 	 */
 	public void put(final String keys, final P value) {
-		if (keys.matches(".*" + SIMPLE_CHARACTER_CLASS + ".*")) {
+		if (keys.matches(".*" + SimpleRegexTrie.SIMPLE_CHARACTER_CLASS + ".*")) {
 			int charClassStart = keys.indexOf('[', 0);
 			final int charClassEnd = keys.indexOf(']', 1);
-			String begin = keys.substring(0, charClassStart);
+			final String begin = keys.substring(0, charClassStart);
 			for (; charClassStart < charClassEnd - 1; charClassStart++) {
-				char middle = keys.charAt(charClassStart + 1);
-				String end = keys.substring(charClassEnd + 1, keys.length());
+				final char middle = keys.charAt(charClassStart + 1);
+				final String end = keys.substring(charClassEnd + 1, keys.length());
 				put(begin + middle + end, value);
 			}
-		} else
-			trie.put(keys, value);
-	}
-
-	public List<P> get(final String key) {
-		return trie.get(key);
+		} else {
+			this.trie.put(keys, value);
+		}
 	}
 
 }
