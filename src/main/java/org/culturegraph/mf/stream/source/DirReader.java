@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013, 2014 Deutsche Nationalbibliothek
+ *  Copyright 2013, 2014, 2016 Deutsche Nationalbibliothek
  *
  *  Licensed under the Apache License, Version 2.0 the "License";
  *  you may not use this file except in compliance with the License.
@@ -19,17 +19,20 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Arrays;
 
+import org.culturegraph.mf.exceptions.MetafactureException;
 import org.culturegraph.mf.framework.DefaultObjectPipe;
 import org.culturegraph.mf.framework.ObjectReceiver;
 import org.culturegraph.mf.framework.annotations.Description;
 import org.culturegraph.mf.framework.annotations.In;
 import org.culturegraph.mf.framework.annotations.Out;
+import org.slf4j.LoggerFactory;
 
 /**
  * Reads a directory and emits all filenames found.
- * 
+ *
  * @author Markus Michael Geipel
  * @author Fabian Steeg (fsteeg)
+ * @author Pascal Christoph (dr0i)
  */
 @In(String.class)
 @Out(String.class)
@@ -40,12 +43,25 @@ public final class DirReader extends DefaultObjectPipe<String, ObjectReceiver<St
 
 	private String filenameFilterPattern = null;
 
-	public void setRecursive(final boolean recursive) {
-		this.recursive = recursive;
-	}
-
-	public void setFilenamePattern(final String filenameFilterPattern) {
-		this.filenameFilterPattern = filenameFilterPattern;
+	private void dir(final File dir) {
+		final ObjectReceiver<String> receiver = getReceiver();
+		final File[] files = this.filenameFilterPattern == null ? dir.listFiles()
+				: dir.listFiles(new FilenameFilter() {
+					@Override
+					public boolean accept(final File dir, final String name) {
+						return name.matches(DirReader.this.filenameFilterPattern);
+					}
+				});
+		Arrays.sort(files);
+		for (final File file : files) {
+			if (file.isDirectory()) {
+				if (this.recursive) {
+					dir(file);
+				}
+			} else {
+				receiver.process(file.getAbsolutePath());
+			}
+		}
 	}
 
 	@Override
@@ -54,28 +70,29 @@ public final class DirReader extends DefaultObjectPipe<String, ObjectReceiver<St
 		if (file.isDirectory()) {
 			dir(file);
 		} else {
-			getReceiver().process(dir);
+			try {
+				getReceiver().process(dir);
+			} catch (final MetafactureException e) {
+				LoggerFactory.getLogger(DirReader.class).error("Problems with file '" + file + "'",
+						e);
+				getReceiver().resetStream();
+			}
 		}
 	}
 
-	private void dir(final File dir) {
-		final ObjectReceiver<String> receiver = getReceiver();
-		final File[] files = filenameFilterPattern == null ? dir.listFiles()
-				: dir.listFiles(new FilenameFilter() {
-					@Override
-					public boolean accept(final File dir, final String name) {
-						return name.matches(filenameFilterPattern);
-					}
-				});
-		Arrays.sort(files);
-		for (File file : files) {
-			if (file.isDirectory()) {
-				if (recursive) {
-					dir(file);
-				}
-			} else {
-				receiver.process(file.getAbsolutePath());
-			}
-		}
+	public void setFilenamePattern(final String filenameFilterPattern) {
+		this.filenameFilterPattern = filenameFilterPattern;
+	}
+
+	/**
+	 * Set to 'true' if directories should be recursively processed. Default is
+	 * 'false' and thus only files residing directly in the directory will be
+	 * processed.
+	 *
+	 * @param boolean
+	 *            recursive, default is 'false'
+	 */
+	public void setRecursive(final boolean recursive) {
+		this.recursive = recursive;
 	}
 }
