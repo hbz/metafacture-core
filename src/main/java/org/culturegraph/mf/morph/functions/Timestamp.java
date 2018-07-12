@@ -16,6 +16,7 @@
 package org.culturegraph.mf.morph.functions;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -23,19 +24,20 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.culturegraph.mf.exceptions.MorphDefException;
 
 /**
- * This function creates a timestamp. By default it returns a unix
- * timestamp. Other formats are and different
- * timezones can be specified.
+ * This function creates a timestamp. By default it returns a unix timestamp.
+ * Other formats are and different timezones can be specified.
  *
  * Examples for using the function in Metamorph:
  * <ul>
- * 	<li>Generate a default unix timestamp: <code>&lt;timestamp /&gt;</code></li>
- * 	<li>Generate a nicely formatted timestamp using central european time:
- * 	<code>&lt;timestamp format="yyyy-MM-dd'T'HH:mmZ" timezone="Europe/Berlin" /&gt;</code></li>
+ * <li>Generate a default unix timestamp: <code>&lt;timestamp /&gt;</code></li>
+ * <li>Generate a nicely formatted timestamp using central european time:
+ * <code>&lt;timestamp format="yyyy-MM-dd'T'HH:mmZ" timezone="Europe/Berlin" /&gt;</code></li>
  * </ul>
  *
  * @author Michael Büchner
@@ -53,6 +55,10 @@ public final class Timestamp extends AbstractSimpleStatelessFunction {
 	private String format = DEFAULT_FORMAT;
 	private String timezone = DEFAULT_TIMEZONE;
 	private Locale locale = Locale.getDefault();
+	private boolean validate = false;
+	private Date formatMe;
+	private static final Logger LOG = LoggerFactory.getLogger(Timestamp.class);
+	private static final String defaultDate = "00010101"; 
 
 	static {
 		final Set<String> set = new HashSet<String>();
@@ -72,7 +78,22 @@ public final class Timestamp extends AbstractSimpleStatelessFunction {
 			throw new MorphDefException("The date/time format '" + format + "' is not supported. ", e);
 		}
 		dateFormat.setTimeZone(TimeZone.getTimeZone(timezone));
-		return dateFormat.format(new Date());
+		if (validate) {
+			try {
+				formatMe = dateFormat.parse(value);
+			} catch (ParseException e) {
+				LOG.warn("Couldn't parse date"+value+".Set to default: "+defaultDate);
+				try {
+					formatMe = dateFormat.parse(defaultDate);
+				} catch (ParseException e1) {
+					// can't happen
+					e1.printStackTrace();
+				}
+			}
+		} else
+			formatMe = new Date();
+		System.out.println(value+":"+formatMe.toString());
+		return dateFormat.format(formatMe);
 	}
 
 	public void setFormat(final String format) {
@@ -88,6 +109,10 @@ public final class Timestamp extends AbstractSimpleStatelessFunction {
 			throw new MorphDefException("Language '" + language + "' not supported.");
 		}
 		this.locale = new Locale(language);
+	}
+
+	public void setValidate(final boolean val) {
+		validate = val;
 	}
 
 }
