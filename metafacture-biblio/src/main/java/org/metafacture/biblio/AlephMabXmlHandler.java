@@ -47,7 +47,8 @@ public final class AlephMabXmlHandler extends DefaultXmlPipe<StreamReceiver> {
     private static final String INDICATOR2 = "ind2";
     private String currentTag = "";
     private StringBuilder builder = new StringBuilder();
-
+    private String alephid;
+    private String tagIndi12;
     @Override
     public void characters(final char[] chars, final int start, final int length)
             throws SAXException {
@@ -62,17 +63,23 @@ public final class AlephMabXmlHandler extends DefaultXmlPipe<StreamReceiver> {
             getReceiver().endEntity();
         } else if (AlephMabXmlHandler.SUBFIELD.equals(localName)) {
             getReceiver().literal(this.currentTag, this.builder.toString().trim());
+            if(tagIndi12.equals(
+                    "001-1"))
+                System.out.println(
+                        "alpehid001:"+alephid+","+tagIndi12);
         } else if (AlephMabXmlHandler.DATAFIELD.equals(localName)) {
             getReceiver().endEntity();
         } else if (AlephMabXmlHandler.RECORD.equals(localName)) {
             getReceiver().endRecord();
+            if(tagIndi12==null)
+                System.out.println(
+                        "alephid:"+alephid);
         }else if("header".equals(
                 localName)){
-            System.out.println(
-                    "aleph-publish:"+
+            alephid=
                             builder.toString().trim().replaceAll(
                                     ".*aleph-publish:(\\d+).*",
-                                    "$1"));
+                            "$1");
         }
     }
 
@@ -88,12 +95,19 @@ public final class AlephMabXmlHandler extends DefaultXmlPipe<StreamReceiver> {
             this.builder = new StringBuilder();
             this.currentTag = attributes.getValue(AlephMabXmlHandler.SUBFIELD_ATTRIBUTE);
         } else if (AlephMabXmlHandler.DATAFIELD.equals(localName)) {
-            getReceiver().startEntity(attributes.getValue(AlephMabXmlHandler.DATAFIELD_ATTRIBUTE)
+            tagIndi12=attributes.getValue(
+                    AlephMabXmlHandler.DATAFIELD_ATTRIBUTE)
                     + attributes.getValue(AlephMabXmlHandler.INDICATOR1)
-                    + attributes.getValue(AlephMabXmlHandler.INDICATOR2));
+                    +attributes.getValue(
+                            AlephMabXmlHandler.INDICATOR2);
+            getReceiver().startEntity(
+                    tagIndi12);
+
         } else if (AlephMabXmlHandler.RECORD.equals(localName)) {
             this.builder=new StringBuilder();
             getReceiver().startRecord("");
+            tagIndi12=null;
+            alephid=null;
         } else if (AlephMabXmlHandler.LEADER.equals(localName)) {
             this.builder = new StringBuilder();
             this.currentTag = AlephMabXmlHandler.LEADER;
