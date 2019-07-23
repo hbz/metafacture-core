@@ -66,13 +66,21 @@ public final class AlephMabXmlHandler extends DefaultXmlPipe<StreamReceiver> {
             getReceiver().endEntity();
         } else if (AlephMabXmlHandler.RECORD.equals(localName)) {
             getReceiver().endRecord();
+        }else if("header".equals(
+                localName)){
+            System.out.println(
+                    "aleph-publish:"+
+                            builder.toString().trim().replaceAll(
+                                    ".*aleph-publish:(\\d+).*",
+                                    "$1"));
         }
     }
 
     @Override
     public void startElement(final String uri, final String localName, final String qName,
             final Attributes attributes) throws SAXException {
-        if (AlephMabXmlHandler.CONTROLLFIELD.equals(localName)) {
+        if(AlephMabXmlHandler.CONTROLLFIELD.equals(
+                localName)){
             this.builder = new StringBuilder();
             this.currentTag = "";
             getReceiver().startEntity(attributes.getValue(AlephMabXmlHandler.DATAFIELD_ATTRIBUTE));
@@ -84,10 +92,20 @@ public final class AlephMabXmlHandler extends DefaultXmlPipe<StreamReceiver> {
                     + attributes.getValue(AlephMabXmlHandler.INDICATOR1)
                     + attributes.getValue(AlephMabXmlHandler.INDICATOR2));
         } else if (AlephMabXmlHandler.RECORD.equals(localName)) {
+            this.builder=new StringBuilder();
             getReceiver().startRecord("");
         } else if (AlephMabXmlHandler.LEADER.equals(localName)) {
             this.builder = new StringBuilder();
             this.currentTag = AlephMabXmlHandler.LEADER;
+        }
+        else if("header".equals(
+                localName)){
+            if(attributes.getLength()>0){
+            System.out.println(
+                     "headerstatus:"+
+                                attributes.getValue(
+                                        0)+", id follows");
+        }
         }
     }
 
