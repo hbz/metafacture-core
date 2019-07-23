@@ -48,8 +48,10 @@ public final class AlephMabXmlHandler extends DefaultXmlPipe<StreamReceiver> {
     private String currentTag="";
     private StringBuilder builder=new StringBuilder();
     private String alephid;
+    private String id001;
     private String tagIndi12;
-    private boolean tagIndi12Exists=false;
+    private String headerstatus;
+
     @Override
     public void characters (
             final char[] chars ,
@@ -81,19 +83,17 @@ public final class AlephMabXmlHandler extends DefaultXmlPipe<StreamReceiver> {
                     this.builder.toString().trim());
             if(tagIndi12.equals(
                     "001-1")){
-                System.out.println(
-                        "alpehid001:"+alephid+","+this.builder.toString()
-                                .trim());
-                tagIndi12Exists=true;
+                id001=this.builder.toString()
+                        .trim();
             }
         }else if(AlephMabXmlHandler.DATAFIELD.equals(
                 localName)){
             getReceiver().endEntity();
         }else if(AlephMabXmlHandler.RECORD.equals(
                 localName)){
-            if(!tagIndi12Exists)
-                System.out.println(
-                        "alephidwithout001:"+alephid);
+            System.out.println(
+                    "alephid001:"+alephid+","+id001+","+(headerstatus!=null
+                            ?headerstatus:""));
             getReceiver().endRecord();
         }else if("header".equals(
                 localName)){
@@ -139,7 +139,8 @@ public final class AlephMabXmlHandler extends DefaultXmlPipe<StreamReceiver> {
                     "");
             tagIndi12=null;
             alephid=null;
-            tagIndi12Exists=false;
+            id001=null;
+            headerstatus=null;
         }else if(AlephMabXmlHandler.LEADER.equals(
                 localName)){
             this.builder=new StringBuilder();
@@ -147,11 +148,9 @@ public final class AlephMabXmlHandler extends DefaultXmlPipe<StreamReceiver> {
         }else if("header".equals(
                 localName)){
             if(attributes.getLength()>0){
-                System.out.println(
-                        "headerstatus:"+
-                                attributes.getValue(
-                                        0)+", id follows");
-        }
+                headerstatus=attributes.getValue(
+                        0);
+            }
         }
     }
 
